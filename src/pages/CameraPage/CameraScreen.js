@@ -1,19 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { cameraWithTensors } from '@tensorflow/tfjs-react-native';
-import yolo, { downloadModel } from 'tfjs-yolo-tiny';
-
-import '@tensorflow/tfjs-react-native';
-import * as tf from '@tensorflow/tfjs-core';
 
 import { Camera } from 'expo-camera';
+
+import { Asset } from 'expo-asset';
+
 
 // const model = downloadModel();
 import { StyleSheet, Text, View, Button, Dimensions, Pressable, Modal, ActivityIndicator } from 'react-native';
 
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-react-native';
+import { bundleResourceIO } from '@tensorflow/tfjs-react-native';
+
 const TensorCamera = cameraWithTensors(Camera);
 
 const CameraScreen = ({ navigation }) => {
+  const [tfReady, settfReady] = useState(false);
+  const [modelReady, setModelReady] = useState(false);
+  const [model_tf, setModelTF] = useState();
   
+
+  useEffect(() => {
+    // tf.setBackend('cpu')
+    tf.ready().then(() => {
+      settfReady(true)
+    });
+    console.log("FINALIZANDO READY")
+    
+  });
+
+
 
   const [hasPermission, setHasPermission] = useState(null);
   const cameraRef = useRef();
@@ -30,11 +47,56 @@ const CameraScreen = ({ navigation }) => {
     };
   }
   useEffect(() => {
+    
     (async () => {
+      console.log("Carregando componentes")
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
-      // await tf.ready();
 
+      class L2 {
+
+        static className = 'L2';
+    
+        constructor(config) {
+           return tf.regularizers.l1l2(config)
+        }
+    }
+    tf.serialization.registerClass(L2);
+
+    class Lambda extends tf.layers.Layer {
+      constructor(config) {
+        console.log(config)
+        super({})
+      }
+    
+      static get className() {
+        return 'Lambda';
+      }
+    
+       call(inputs, kwargs) {
+        let input = inputs;
+        if (Array.isArray(input)) {
+          input = input[0];
+        }
+        this.invokeCallHook(inputs, kwargs);
+        return input.pow(tf.tensor(2).toInt())
+      }
+    
+    }
+    
+    tf.serialization.SerializationMap.register(Lambda);
+  
+      console.log("Carregando tf")
+      await tf.ready();
+      console.log("Carregando model json")
+      const modelJson = require('../../../assets/model.json')
+      console.log("Carregando model bin")
+      const modelWeights = require('../../../assets/group.bin')
+      console.log("Carregando model")
+      const model = await tf.loadLayersModel(bundleResourceIO(modelJson, modelWeights));
+      console.log("Settando model")
+      setModelTF(model)
+      setModelReady(true)
     })();
   }, []);
 
@@ -45,28 +107,34 @@ const CameraScreen = ({ navigation }) => {
     return <Text>No access to camera</Text>;
   }
 
-  // const getPrediction = async (tensor) => {
-  //   if (!tensor) {
-  //     return;
-  //   }
-
-  //   const boxes = await yolo(tensor, model);
-  //   console.log(`prediction: ${JSON.stringify(boxes)}`);
-
-  //   // if (!prediction || prediction.length === 0) {
-  //   //   cancelAnimationFrame(requestAnimationFrameId);
-  //   //   console.log("no predictions found");
-  //   //   setPredictionFound(false);
-  //   //   return;
-  //   // } else {
-  //   //   setPredictionFound(true);
-  //   // }
-  // };
+  renderPredictionBoxes = (predictionBoxes, predictionClasses, predictionScores) => {
+      console.log("----------boxes----------")
+      console.log(predictionBoxes)
+      console.log("----------classes----------")
+      console.log(predictionClasses)
+      console.log("----------scores----------")
+      console.log(predictionScores)
+  }
 
   handleCameraStream = (images, updatePreview, gl) => {
+    console.log('INICIANDO HANDLE')
     const loop = async () => {
-      const nextImageTensor = images.next().value
-      await getPrediction(nextImageTensor);
+      let tensor = images.next().value
+      tensor = tensor.reshape([1, 416, 416, 3]).div(1.0);
+      // model_tf.predict(tensor).print();
+      let predictions = await model_tf.predict(tensor);
+      // predictions.print();
+      const labelPrediction = predictions.argMax().dataSync()[0];
+      console.log("label is ${labelPrediction}")
+      console.log(labelPrediction)
+      tf.dispose(tensor);
+
+      
+      
+
+      console.log("PREDICTED")
+      // console.log(`prediction: ${JSON.stringify(res.dataSync())}`);
+      // tf.dispose(bbox);
       requestAnimationFrame(loop);
     }
     loop();
@@ -74,8 +142,7 @@ const CameraScreen = ({ navigation }) => {
 
     return (
       <View style={styles.container}>
-      
-      <TensorCamera
+      {modelReady ? <TensorCamera
         ref={cameraRef}
         // Standard Camera props
         style={styles.camera}
@@ -83,12 +150,13 @@ const CameraScreen = ({ navigation }) => {
         // Tensor related props
         cameraTextureHeight={textureDims.height}
         cameraTextureWidth={textureDims.width}
-        resizeHeight={50}
-        resizeWidth={50}
+        onReady={handleCameraStream}
+        resizeHeight={416}
+        resizeWidth={416}
         resizeDepth={3}
-        onReady={(imageAsTensors) => console.log("aa")}
-        autorender={true}
-      />
+
+     /> : <Text>Carregando Modelo</Text>}
+
     </View>
     );
 }

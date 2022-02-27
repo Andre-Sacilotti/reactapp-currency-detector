@@ -22,22 +22,10 @@ import CameraScreen from './src/pages/CameraPage/CameraScreen';
 
 import { useFonts } from 'expo-font';
 import AppLoading from 'expo-app-loading';
-import '@tensorflow/tfjs-react-native';
-import * as tf from '@tensorflow/tfjs-core';
 
-async function loadBackend() {
-  await tf.ready();
-  return tf.getBackend();
-}
 
 const App = () => {
-  const [result, setResult] = useState(['backend not loaded', false]);
 
-  if (!result[1]) {
-    loadBackend()
-        .then((backend) => setResult([`Successfully loaded ${backend} backend`, true]))
-        .catch((e) => setResult([`Failed to load backend: ${e}`, true]));
-      }
 
 let [fontsLoaded] = useFonts({
   'Montserrat-light': require('./assets/fonts/Montserrat-Light.ttf'),

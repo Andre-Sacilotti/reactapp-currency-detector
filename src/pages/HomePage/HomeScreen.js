@@ -77,8 +77,8 @@ const styles = StyleSheet.create({
       opacity: 0.9,
       textAlign: 'center',
       paddingBottom: '3.5%',
-      fontFamily: 'Montserrat-Thin',
-      fontWeight: '100',
+      fontFamily: 'Montserrat-SemiBold',
+      fontWeight: '400',
       fontSize: 30
     },
     midcontent: {
@@ -91,8 +91,8 @@ const styles = StyleSheet.create({
       color: '#2c2f30',
       opacity: 0.8,
       textAlign: 'center',
-      fontFamily: 'Montserrat-Thin',
-      fontWeight: '400',
+      fontFamily: 'Montserrat-Regular',
+      fontWeight: '300',
       fontSize: 24
     },
     midcontent_body_text: {
@@ -101,9 +101,9 @@ const styles = StyleSheet.create({
       marginLeft: 25,
       color: '#2c2f30',
       opacity: 0.6,
-      fontFamily: 'Montserrat-Thin',
-      fontWeight: '100',
-      fontSize: 20
+      fontFamily: 'Montserrat-Medium',
+      fontWeight: '200',
+      fontSize: 16
     },
     buttonscontent:{
       alignContent: 'space-between'
@@ -130,9 +130,9 @@ const styles = StyleSheet.create({
     credits: {
       color: '#2c2f30',
       opacity: 0.6,
-      fontFamily: 'Montserrat-Thin',
-      fontWeight: '100',
-      fontSize: 16
+      fontFamily: 'Montserrat-Medium',
+      fontWeight: '300',
+      fontSize: 14
     },
     divider: {
       borderBottomColor: '#636363',
